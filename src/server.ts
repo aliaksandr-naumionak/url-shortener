@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import Fastify from 'fastify';
 import FastifyRateLimit from '@fastify/rate-limit';
+import fastifySwagger from '@fastify/swagger';
 import urlRoutes from './routes/url.routes';
 import prismaPlugin from './plugins/prisma';
 import { config } from './utils/config';
@@ -34,27 +35,50 @@ const server = Fastify({
         },
 });
 
-server.register(FastifyRateLimit, {
-    max: config.RATE_LIMIT_MAX, // max requests
-    timeWindow: config.RATE_LIMIT_WINDOW, // per time window
-    errorResponseBuilder: () => ({
-        statusCode: 429,
-        error: 'Too Many Requests',
-        message: 'You have exceeded the request limit.',
-    }),
-});
+async function main() {
+    try {
+        // Register rate limiting globally
+        await server.register(FastifyRateLimit, {
+            max: config.RATE_LIMIT_MAX,
+            timeWindow: config.RATE_LIMIT_WINDOW,
+            errorResponseBuilder: () => ({
+                statusCode: 429,
+                error: 'Too Many Requests',
+                message: 'You have exceeded the request limit.',
+            }),
+        });
 
-server.register(prismaPlugin);
-server.register(urlRoutes, { prefix: '/api' });
+        // Register Prisma plugin for DB access
+        await server.register(prismaPlugin);
 
-server.setErrorHandler((error, req, reply) => {
-    req.log.error(error, 'Unhandled error');
-    reply.status(500).send({ error: 'Internal Server Error' });
-});
+        // Register Swagger documentation
+        await server.register(fastifySwagger, {
+            openapi: {
+                info: {
+                    title: 'URL Shortener API',
+                    description: 'Fastify service to shorten and redirect URLs',
+                    version: '1.0.0',
+                },
+            },
+            exposeRoute: true,
+            routePrefix: '/docs',
+            staticCSP: false,
+            uiConfig: {
+                docExpansion: 'list',
+                deepLinking: false,
+            },
+        });
 
-server.listen({ port: 3000 }, (err) => {
-    if (err) {
-        server.log.error(err);
+
+        // Register API routes
+        await server.register(urlRoutes, { prefix: '/api' });
+
+        // Start the Fastify server
+        await server.listen({ port: 3000 });
+    } catch (err) {
+        server.log.error(err, 'Failed to start server');
         process.exit(1);
     }
-});
+}
+
+main();

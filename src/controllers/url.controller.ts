@@ -28,6 +28,33 @@ export async function getAllUrls(req: FastifyRequest, reply: FastifyReply) {
     if (!parse.success) return reply.code(400).send({ error: 'Invalid pagination params' });
 
     const { page, limit } = parse.data.query;
-    const urls = await getUrls(req.server.prisma, page, limit);
-    reply.send(urls);
+
+    const [urls, total] = await Promise.all([
+        getUrls(req.server.prisma, page, limit),
+        req.server.prisma.url.count(),
+    ]);
+
+    reply.send({
+        page,
+        limit,
+        total,
+        urls,
+    });
+}
+
+export async function redirectToOriginalUrl(req: FastifyRequest, reply: FastifyReply) {
+    const { code } = req.params as { code: string };
+    const prisma = req.server.prisma;
+    const url = await prisma.url.findUnique({ where: { shortCode: code } });
+
+    if (!url || (url.expiresAt && new Date() > url.expiresAt)) {
+        return reply.code(404).send({ error: 'URL not found or expired' });
+    }
+
+    await prisma.url.update({
+        where: { id: url.id },
+        data: { hitCount: { increment: 1 } },
+    });
+
+    reply.redirect(url.originalUrl);
 }
