@@ -5,6 +5,7 @@ import { config } from '../utils/config';
 
 const shortenSchema = z.object({
     originalUrl: z.string().url(),
+    expiresAt: z.string().datetime().optional()
 });
 
 const paginationSchema = z.object({
@@ -18,8 +19,8 @@ export async function shortenUrl(req: FastifyRequest, reply: FastifyReply) {
     const parse = shortenSchema.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: 'Invalid URL' });
 
-    const { originalUrl } = parse.data;
-    const result = await createShortUrl(originalUrl, req.server.prisma);
+    const { originalUrl, expiresAt } = parse.data;
+    const result = await createShortUrl(originalUrl, req.server.prisma, expiresAt);
     reply.send({ shortUrl: `${config.BASE_URL}/api/${result.shortCode}` });
 }
 

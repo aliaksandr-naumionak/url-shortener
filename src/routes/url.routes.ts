@@ -10,6 +10,7 @@ export default async function urlRoutes(fastify: FastifyInstance) {
                 required: ['originalUrl'],
                 properties: {
                     originalUrl: { type: 'string', format: 'uri' },
+                    expiresAt: { type: 'string', format: 'date-time' } // optional
                 },
             },
             response: {
