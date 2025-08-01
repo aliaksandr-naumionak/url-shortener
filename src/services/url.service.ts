@@ -10,6 +10,10 @@ export async function createShortUrl(originalUrl: string, prisma: PrismaClient) 
     return prisma.url.create({ data: { originalUrl, shortCode } });
 }
 
-export async function getUrls(prisma: PrismaClient) {
-    return prisma.url.findMany();
+export async function getUrls(prisma: PrismaClient, page: number, limit: number) {
+    return prisma.url.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+    });
 }
