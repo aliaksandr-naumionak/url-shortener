@@ -74,7 +74,7 @@ async function main() {
         await server.register(urlRoutes, { prefix: '/api' });
 
         // Start the Fastify server
-        await server.listen({ port: 3000 });
+        await server.listen({ port: 3000, host: '0.0.0.0' });
     } catch (err) {
         server.log.error(err, 'Failed to start server');
         process.exit(1);

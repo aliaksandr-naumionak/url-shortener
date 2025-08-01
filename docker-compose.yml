@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: url-shortener
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - ./prisma/dev.db:/app/prisma/dev.db  # Persist SQLite DB (if using SQLite)
+    environment:
+      - NODE_ENV=development
+    command: npm run dev     # or "npm start" for production

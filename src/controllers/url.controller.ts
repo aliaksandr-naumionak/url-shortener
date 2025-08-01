@@ -20,7 +20,7 @@ export async function shortenUrl(req: FastifyRequest, reply: FastifyReply) {
 
     const { originalUrl } = parse.data;
     const result = await createShortUrl(originalUrl, req.server.prisma);
-    reply.send({ shortUrl: `${config.BASE_URL}/${result.shortCode}` });
+    reply.send({ shortUrl: `${config.BASE_URL}/api/${result.shortCode}` });
 }
 
 export async function getAllUrls(req: FastifyRequest, reply: FastifyReply) {
